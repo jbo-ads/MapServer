@@ -1221,8 +1221,8 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
       } else if (strcasecmp(psStrkName, "stroke-width") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
-          psStyle->width =
-            atof(psCssParam->psChild->psNext->pszValue);
+          msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                  psStyle, MS_STYLE_BINDING_WIDTH);
         }
       } else if (strcasecmp(psStrkName, "stroke-dasharray") == 0) {
         if(psCssParam->psChild && psCssParam->psChild->psNext &&
@@ -1279,6 +1279,117 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
     free(pszDashValue);
 
   return MS_SUCCESS;
+}
+
+
+
+/************************************************************************/
+/*  int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,  */
+/*                              enum MS_STYLE_BINDING_ENUM binding)     */
+/*                                                                      */
+/*              Parse an OGC expression in a <SvgParameter>             */
+/************************************************************************/
+int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
+                            enum MS_STYLE_BINDING_ENUM binding)
+{
+  int status = MS_FAILURE;
+
+  switch (psRoot->eType)
+  {
+    case CXT_Text:
+      // Parse a raw value
+      switch (binding)
+      {
+        case MS_STYLE_BINDING_SIZE:
+          psStyle->size = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_WIDTH:
+          psStyle->width = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_ANGLE:
+          psStyle->angle = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_COLOR:
+          if (strlen(psRoot->pszValue) == 7 && psRoot->pszValue[0] == '#')
+          {
+            psStyle->color.red = msHexToInt(psRoot->pszValue+1);
+            psStyle->color.green = msHexToInt(psRoot->pszValue+3);
+            psStyle->color.blue = msHexToInt(psRoot->pszValue+5);
+          }
+          break;
+        case MS_STYLE_BINDING_OUTLINECOLOR:
+          if (strlen(psRoot->pszValue) == 7 && psRoot->pszValue[0] == '#')
+          {
+            psStyle->outlinecolor.red = msHexToInt(psRoot->pszValue+1);
+            psStyle->outlinecolor.green = msHexToInt(psRoot->pszValue+3);
+            psStyle->outlinecolor.blue = msHexToInt(psRoot->pszValue+5);
+          }
+          break;
+        case MS_STYLE_BINDING_SYMBOL:
+          status = MS_FAILURE;
+          break;
+        case MS_STYLE_BINDING_OUTLINEWIDTH:
+          psStyle->outlinewidth = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_OPACITY:
+        case MS_STYLE_BINDING_OFFSET_X:
+          psStyle->offsetx = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_OFFSET_Y:
+          psStyle->offsety = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_POLAROFFSET_PIXEL:
+          psStyle->polaroffsetpixel = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        case MS_STYLE_BINDING_POLAROFFSET_ANGLE:
+          psStyle->polaroffsetangle = atof(psRoot->pszValue);
+          status = MS_SUCCESS;
+          break;
+        default:
+          break;
+      }
+      break;
+    case CXT_Element:
+      if (strcasecmp(psRoot->pszValue,"Literal") == 0 && psRoot->psChild)
+      {
+        // Parse a <ogc:Literal> element
+        status = msSLDParseOgcExpression(psRoot->psChild, psStyle, binding);
+      }
+      else if (strcasecmp(psRoot->pszValue,"PropertyName") == 0
+               && psRoot->psChild)
+      {
+        // Parse a <ogc:PropertyName> element
+        psStyle->bindings[binding].item = msStrdup(psRoot->psChild->pszValue);
+        psStyle->numbindings++;
+        status = MS_SUCCESS;
+      }
+      break;
+    default:
+      break;
+  }
+
+  // Debugging info
+  if (status == MS_FAILURE)
+  {
+    fprintf(stderr,"DEBUG: Not implemented: %s (%s)\n",
+            psRoot->pszValue,
+            psRoot->eType==CXT_Text?"CXT_Text":
+            psRoot->eType==CXT_Element?"CXT_Element":
+            psRoot->eType==CXT_Comment?"CXT_Comment":
+            psRoot->eType==CXT_Literal?"CXT_Literal":
+            psRoot->eType==CXT_Attribute?"CXT_Attribute":
+            "UNKNOWN"
+    );
+  }
+
+  return status;
 }
 
 
