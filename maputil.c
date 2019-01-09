@@ -150,6 +150,9 @@ static void bindStyle(layerObj *layer, shapeObj *shape, styleObj *style, int dra
       style->width = 1;
       bindDoubleAttribute(&style->width, shape->values[style->bindings[MS_STYLE_BINDING_WIDTH].index]);
     }
+    if(style->exprBindings[MS_STYLE_BINDING_WIDTH].type == MS_EXPRESSION) {
+      style->width = msEvalDoubleExpression(&(style->exprBindings[MS_STYLE_BINDING_WIDTH]), shape);
+    }
     if(style->bindings[MS_STYLE_BINDING_COLOR].index != -1 && !MS_DRAW_QUERY(drawmode)) {
       MS_INIT_COLOR(style->color, -1,-1,-1,255);
       bindColorAttribute(&style->color, shape->values[style->bindings[MS_STYLE_BINDING_COLOR].index]);
@@ -693,6 +696,27 @@ char *msEvalTextExpressionJSonEscape(expressionObj *expr, shapeObj *shape)
 char *msEvalTextExpression(expressionObj *expr, shapeObj *shape)
 {
     return msEvalTextExpressionInternal(expr, shape, MS_FALSE);
+}
+
+double msEvalDoubleExpression(expressionObj *expression, shapeObj *shape)
+{
+  double value;
+  int status;
+  parseObj p;
+  p.shape = shape;
+  p.expr = expression;
+  p.expr->curtoken = p.expr->tokens; /* reset */
+  p.type = MS_PARSE_TYPE_STRING;
+  status = yyparse(&p);
+  if (status != 0) {
+    msSetError(MS_PARSEERR, "Failed to parse expression: %s",
+               "bindStyle", expression->string);
+    value = 0.0;
+  } else {
+    value = atof(p.result.strval);
+  }
+  fprintf(stderr, "DEBUG: expr: \"%s\" = \"%s\" %.18g\n", expression->string, p.result.strval, value);
+  return value;
 }
 
 char* msShapeGetLabelAnnotation(layerObj *layer, shapeObj *shape, labelObj *lbl) {

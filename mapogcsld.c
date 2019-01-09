@@ -1305,7 +1305,10 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_WIDTH:
-          psStyle->width = atof(psRoot->pszValue);
+          msInitExpression(&(psStyle->exprBindings[binding]));
+          psStyle->exprBindings[binding].string = msStrdup(psRoot->pszValue);
+          psStyle->exprBindings[binding].type = MS_EXPRESSION;
+          psStyle->numbindings++;
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_ANGLE:
@@ -1336,6 +1339,8 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_OPACITY:
+          status = MS_FAILURE;
+          break;
         case MS_STYLE_BINDING_OFFSET_X:
           psStyle->offsetx = atof(psRoot->pszValue);
           status = MS_SUCCESS;
@@ -1366,7 +1371,13 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
                && psRoot->psChild)
       {
         // Parse a <ogc:PropertyName> element
-        psStyle->bindings[binding].item = msStrdup(psRoot->psChild->pszValue);
+        char * propString = NULL;
+        msInitExpression(&(psStyle->exprBindings[binding]));
+        propString = msStringConcatenate(propString, "[");
+        propString = msStringConcatenate(propString, psRoot->psChild->pszValue);
+        propString = msStringConcatenate(propString, "]");
+        psStyle->exprBindings[binding].string = propString;
+        psStyle->exprBindings[binding].type = MS_EXPRESSION;
         psStyle->numbindings++;
         status = MS_SUCCESS;
       }
