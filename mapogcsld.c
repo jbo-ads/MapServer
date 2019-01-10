@@ -1293,6 +1293,7 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
                             enum MS_STYLE_BINDING_ENUM binding)
 {
   int status = MS_FAILURE;
+  const char * ops = "Add+Sub-Mul*Div/";
 
   switch (psRoot->eType)
   {
@@ -1362,24 +1363,55 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
       }
       break;
     case CXT_Element:
-      if (strcasecmp(psRoot->pszValue,"Literal") == 0 && psRoot->psChild)
+      if (strcasecmp(psRoot->pszValue, "Literal") == 0 && psRoot->psChild)
       {
         // Parse a <ogc:Literal> element
         status = msSLDParseOgcExpression(psRoot->psChild, psStyle, binding);
       }
-      else if (strcasecmp(psRoot->pszValue,"PropertyName") == 0
+      else if (strcasecmp(psRoot->pszValue, "PropertyName") == 0
                && psRoot->psChild)
       {
         // Parse a <ogc:PropertyName> element
         char * propString = NULL;
-        msInitExpression(&(psStyle->exprBindings[binding]));
         propString = msStringConcatenate(propString, "[");
+        msInitExpression(&(psStyle->exprBindings[binding]));
         propString = msStringConcatenate(propString, psRoot->psChild->pszValue);
         propString = msStringConcatenate(propString, "]");
         psStyle->exprBindings[binding].string = propString;
         psStyle->exprBindings[binding].type = MS_EXPRESSION;
         psStyle->numbindings++;
         status = MS_SUCCESS;
+      }
+      else if (strstr(ops, psRoot->pszValue))
+      {
+        // Parse an arithmetic element <ogc:Add>, <ogc:Sub>, <ogc:Mul>, <ogc:Div>
+        char * propString = NULL;
+        if(psRoot->psChild)
+        {
+          propString = msStringConcatenate(propString, "(");
+          msInitExpression(&(psStyle->exprBindings[binding]));
+          status = msSLDParseOgcExpression(psRoot->psChild, psStyle, binding);
+        }
+        if (status == MS_SUCCESS && psRoot->psChild->psNext)
+        {
+          const char op[2] = { *(strstr(ops, psRoot->pszValue)+3), '\0' };
+          propString = msStringConcatenate(propString, psStyle->exprBindings[binding].string);
+          propString = msStringConcatenate(propString, op);
+          msInitExpression(&(psStyle->exprBindings[binding]));
+          status = msSLDParseOgcExpression(psRoot->psChild->psNext, psStyle, binding);
+        }
+        if (status == MS_SUCCESS)
+        {
+          propString = msStringConcatenate(propString, psStyle->exprBindings[binding].string);
+          propString = msStringConcatenate(propString, ")");
+          psStyle->exprBindings[binding].string = propString;
+          psStyle->exprBindings[binding].type = MS_EXPRESSION;
+          psStyle->numbindings++;
+        }
+        if (status == MS_FAILURE)
+        {
+          msInitExpression(&(psStyle->exprBindings[binding]));
+        }
       }
       break;
     default:
