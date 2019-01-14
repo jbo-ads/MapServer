@@ -1197,27 +1197,41 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
       if (strcasecmp(psStrkName, "stroke") == 0) {
         if(psCssParam->psChild && psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue)
-          psColor = psCssParam->psChild->psNext->pszValue;
-
-        if (psColor) {
-          nLength = strlen(psColor);
-          /* expecting hexadecimal ex : #aaaaff */
-          if (nLength == 7 && psColor[0] == '#') {
-            if (iColorParam == 0) {
-              psStyle->color.red = msHexToInt(psColor+1);
-              psStyle->color.green = msHexToInt(psColor+3);
-              psStyle->color.blue= msHexToInt(psColor+5);
-            } else if (iColorParam == 1) {
-              psStyle->outlinecolor.red = msHexToInt(psColor+1);
-              psStyle->outlinecolor.green = msHexToInt(psColor+3);
-              psStyle->outlinecolor.blue= msHexToInt(psColor+5);
-            } else if (iColorParam == 2) {
-              psStyle->backgroundcolor.red = msHexToInt(psColor+1);
-              psStyle->backgroundcolor.green = msHexToInt(psColor+3);
-              psStyle->backgroundcolor.blue= msHexToInt(psColor+5);
-            }
+        {
+          enum MS_STYLE_BINDING_ENUM binding = -1;
+          switch(iColorParam)
+          {
+            case 0: // color
+              binding = MS_STYLE_BINDING_COLOR;
+              break;
+            case 1: // outlinecolor
+              binding = MS_STYLE_BINDING_OUTLINECOLOR;
+              break;
           }
+          msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                  psStyle, binding);
         }
+///       psColor = psCssParam->psChild->psNext->pszValue;
+
+///     if (psColor) {
+///       nLength = strlen(psColor);
+///       /* expecting hexadecimal ex : #aaaaff */
+///       if (nLength == 7 && psColor[0] == '#') {
+///         if (iColorParam == 0) {
+///           psStyle->color.red = msHexToInt(psColor+1);
+///           psStyle->color.green = msHexToInt(psColor+3);
+///           psStyle->color.blue= msHexToInt(psColor+5);
+///         } else if (iColorParam == 1) {
+///           psStyle->outlinecolor.red = msHexToInt(psColor+1);
+///           psStyle->outlinecolor.green = msHexToInt(psColor+3);
+///           psStyle->outlinecolor.blue= msHexToInt(psColor+5);
+///         } else if (iColorParam == 2) {
+///           psStyle->backgroundcolor.red = msHexToInt(psColor+1);
+///           psStyle->backgroundcolor.green = msHexToInt(psColor+3);
+///           psStyle->backgroundcolor.blue= msHexToInt(psColor+5);
+///         }
+///       }
+///     }
       } else if (strcasecmp(psStrkName, "stroke-width") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
@@ -1323,6 +1337,7 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
             psStyle->color.green = msHexToInt(psRoot->pszValue+3);
             psStyle->color.blue = msHexToInt(psRoot->pszValue+5);
           }
+          status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_OUTLINECOLOR:
           if (strlen(psRoot->pszValue) == 7 && psRoot->pszValue[0] == '#')
@@ -1331,6 +1346,7 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
             psStyle->outlinecolor.green = msHexToInt(psRoot->pszValue+3);
             psStyle->outlinecolor.blue = msHexToInt(psRoot->pszValue+5);
           }
+          status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_SYMBOL:
           status = MS_FAILURE;
