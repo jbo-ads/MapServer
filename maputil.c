@@ -169,6 +169,9 @@ static void bindStyle(layerObj *layer, shapeObj *shape, styleObj *style, int dra
       style->opacity = 100;
       bindIntegerAttribute(&style->opacity, shape->values[style->bindings[MS_STYLE_BINDING_OPACITY].index]);
     }
+    if(style->exprBindings[MS_STYLE_BINDING_OPACITY].type == MS_EXPRESSION) {
+      style->opacity = 100*msEvalDoubleExpression(&(style->exprBindings[MS_STYLE_BINDING_OPACITY]), shape);
+    }
     if(style->bindings[MS_STYLE_BINDING_OFFSET_X].index != -1) {
       style->offsetx = 0;
       bindDoubleAttribute(&style->offsetx, shape->values[style->bindings[MS_STYLE_BINDING_OFFSET_X].index]);

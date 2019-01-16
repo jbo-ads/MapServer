@@ -1241,8 +1241,8 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
       } else if (strcasecmp(psStrkName, "stroke-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
-          psStyle->opacity =
-            (int)(atof(psCssParam->psChild->psNext->pszValue)*100);
+          msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                  psStyle, MS_STYLE_BINDING_OPACITY);
         }
       }
     }
@@ -1292,6 +1292,8 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_WIDTH:
+        case MS_STYLE_BINDING_OPACITY:
+          fprintf(stderr, "DEBUG msSLDParseOgcExpression: \"%s\"\n", psRoot->pszValue);
           msInitExpression(&(psStyle->exprBindings[binding]));
           psStyle->exprBindings[binding].string = msStrdup(psRoot->pszValue);
           psStyle->exprBindings[binding].type = MS_EXPRESSION;
@@ -1326,9 +1328,6 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
         case MS_STYLE_BINDING_OUTLINEWIDTH:
           psStyle->outlinewidth = atof(psRoot->pszValue);
           status = MS_SUCCESS;
-          break;
-        case MS_STYLE_BINDING_OPACITY:
-          status = MS_FAILURE;
           break;
         case MS_STYLE_BINDING_OFFSET_X:
           psStyle->offsetx = atof(psRoot->pszValue);
@@ -1638,8 +1637,8 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
       } else if (strcasecmp(psFillName, "fill-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
-          psStyle->opacity =
-            (int)(atof(psCssParam->psChild->psNext->pszValue)*100);
+          msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                  psStyle, MS_STYLE_BINDING_OPACITY);
         }
       }
     }
@@ -1805,11 +1804,9 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                        strcasecmp(psName, "fill-opacity") == 0) {
               if(psCssParam->psChild &&
                   psCssParam->psChild->psNext &&
-                  psCssParam->psChild->psNext->pszValue)
-                psValue = psCssParam->psChild->psNext->pszValue;
-
-              if (psValue) {
-                psStyle->opacity = (int)(atof(psValue)*100);
+                  psCssParam->psChild->psNext->pszValue) {
+                msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                        psStyle, MS_STYLE_BINDING_OPACITY);
               }
             }
 
@@ -1845,11 +1842,9 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                        strcasecmp(psName, "stroke-opacity") == 0) {
               if(psCssParam->psChild &&
                   psCssParam->psChild->psNext &&
-                  psCssParam->psChild->psNext->pszValue)
-                psValue = psCssParam->psChild->psNext->pszValue;
-
-              if (psValue) {
-                psStyle->opacity = (int)(atof(psValue)*100);
+                  psCssParam->psChild->psNext->pszValue) {
+                msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                        psStyle, MS_STYLE_BINDING_OPACITY);
               }
             } else if (psName &&
                        strcasecmp(psName, "stroke-width") == 0) {
