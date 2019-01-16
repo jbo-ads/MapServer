@@ -1175,8 +1175,6 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
 {
   CPLXMLNode *psCssParam = NULL, *psGraphicFill=NULL;
   char *psStrkName = NULL;
-  char *psColor = NULL;
-  int nLength = 0;
   char *pszDashValue = NULL;
 
   if (!psStroke || !psStyle)
@@ -1211,27 +1209,6 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
           msSLDParseOgcExpression(psCssParam->psChild->psNext,
                                   psStyle, binding);
         }
-///       psColor = psCssParam->psChild->psNext->pszValue;
-
-///     if (psColor) {
-///       nLength = strlen(psColor);
-///       /* expecting hexadecimal ex : #aaaaff */
-///       if (nLength == 7 && psColor[0] == '#') {
-///         if (iColorParam == 0) {
-///           psStyle->color.red = msHexToInt(psColor+1);
-///           psStyle->color.green = msHexToInt(psColor+3);
-///           psStyle->color.blue= msHexToInt(psColor+5);
-///         } else if (iColorParam == 1) {
-///           psStyle->outlinecolor.red = msHexToInt(psColor+1);
-///           psStyle->outlinecolor.green = msHexToInt(psColor+3);
-///           psStyle->outlinecolor.blue= msHexToInt(psColor+5);
-///         } else if (iColorParam == 2) {
-///           psStyle->backgroundcolor.red = msHexToInt(psColor+1);
-///           psStyle->backgroundcolor.green = msHexToInt(psColor+3);
-///           psStyle->backgroundcolor.blue= msHexToInt(psColor+5);
-///         }
-///       }
-///     }
       } else if (strcasecmp(psStrkName, "stroke-width") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
@@ -1264,13 +1241,8 @@ int msSLDParseStroke(CPLXMLNode *psStroke, styleObj *psStyle,
       } else if (strcasecmp(psStrkName, "stroke-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
-          if (iColorParam == 0) {
-            psStyle->color.alpha =
-              (int)(atof(psCssParam->psChild->psNext->pszValue)*255);
-          } else {
-            psStyle->outlinecolor.alpha =
-              (int)(atof(psCssParam->psChild->psNext->pszValue)*255);
-          }
+          psStyle->opacity =
+            (int)(atof(psCssParam->psChild->psNext->pszValue)*100);
         }
       }
     }
@@ -1666,7 +1638,8 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
       } else if (strcasecmp(psFillName, "fill-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
             psCssParam->psChild->psNext->pszValue) {
-          psStyle->color.alpha = (int)(atof(psCssParam->psChild->psNext->pszValue)*255);
+          psStyle->opacity =
+            (int)(atof(psCssParam->psChild->psNext->pszValue)*100);
         }
       }
     }
@@ -1836,7 +1809,7 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                 psValue = psCssParam->psChild->psNext->pszValue;
 
               if (psValue) {
-                psStyle->color.alpha = (int)(atof(psValue)*255);
+                psStyle->opacity = (int)(atof(psValue)*100);
               }
             }
 
@@ -1876,7 +1849,7 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                 psValue = psCssParam->psChild->psNext->pszValue;
 
               if (psValue) {
-                psStyle->outlinecolor.alpha = (int)(atof(psValue)*255);
+                psStyle->opacity = (int)(atof(psValue)*100);
               }
             } else if (psName &&
                        strcasecmp(psName, "stroke-width") == 0) {
