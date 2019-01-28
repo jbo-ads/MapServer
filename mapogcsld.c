@@ -1280,6 +1280,17 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
 {
   int status = MS_FAILURE;
   const char * ops = "Add+Sub-Mul*Div/";
+  char * strquote = NULL;
+
+  switch (binding)
+  {
+  case MS_STYLE_BINDING_COLOR:
+  case MS_STYLE_BINDING_OUTLINECOLOR:
+    strquote = "\"";
+    break;
+  default:
+    break;
+  }
 
   switch (psRoot->eType)
   {
@@ -1293,33 +1304,23 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
           break;
         case MS_STYLE_BINDING_WIDTH:
         case MS_STYLE_BINDING_OPACITY:
+        case MS_STYLE_BINDING_COLOR:
+        case MS_STYLE_BINDING_OUTLINECOLOR:
+        {
+          char * textString = NULL;
           fprintf(stderr, "DEBUG msSLDParseOgcExpression: \"%s\"\n", psRoot->pszValue);
           msInitExpression(&(psStyle->exprBindings[binding]));
-          psStyle->exprBindings[binding].string = msStrdup(psRoot->pszValue);
+          if (strquote) textString = msStringConcatenate(textString, "\"");
+          textString = msStringConcatenate(textString, psRoot->pszValue);
+          if (strquote) textString = msStringConcatenate(textString, "\"");
+          psStyle->exprBindings[binding].string = textString;
           psStyle->exprBindings[binding].type = MS_EXPRESSION;
           psStyle->numbindings++;
           status = MS_SUCCESS;
           break;
+        }
         case MS_STYLE_BINDING_ANGLE:
           psStyle->angle = atof(psRoot->pszValue);
-          status = MS_SUCCESS;
-          break;
-        case MS_STYLE_BINDING_COLOR:
-          if (strlen(psRoot->pszValue) == 7 && psRoot->pszValue[0] == '#')
-          {
-            psStyle->color.red = msHexToInt(psRoot->pszValue+1);
-            psStyle->color.green = msHexToInt(psRoot->pszValue+3);
-            psStyle->color.blue = msHexToInt(psRoot->pszValue+5);
-          }
-          status = MS_SUCCESS;
-          break;
-        case MS_STYLE_BINDING_OUTLINECOLOR:
-          if (strlen(psRoot->pszValue) == 7 && psRoot->pszValue[0] == '#')
-          {
-            psStyle->outlinecolor.red = msHexToInt(psRoot->pszValue+1);
-            psStyle->outlinecolor.green = msHexToInt(psRoot->pszValue+3);
-            psStyle->outlinecolor.blue = msHexToInt(psRoot->pszValue+5);
-          }
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BINDING_SYMBOL:
@@ -1360,10 +1361,12 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, styleObj *psStyle,
       {
         // Parse a <ogc:PropertyName> element
         char * propString = NULL;
+        if (strquote) propString = msStringConcatenate(propString, "\"");
         propString = msStringConcatenate(propString, "[");
         msInitExpression(&(psStyle->exprBindings[binding]));
         propString = msStringConcatenate(propString, psRoot->psChild->pszValue);
         propString = msStringConcatenate(propString, "]");
+        if (strquote) propString = msStringConcatenate(propString, "\"");
         psStyle->exprBindings[binding].string = propString;
         psStyle->exprBindings[binding].type = MS_EXPRESSION;
         psStyle->numbindings++;
@@ -1599,8 +1602,7 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
                           mapObj *map)
 {
   CPLXMLNode *psCssParam, *psGraphicFill;
-  char *psColor=NULL, *psFillName=NULL;
-  int nLength = 0;
+  char *psFillName=NULL;
 
   if (!psFill || !psStyle || !map)
     return MS_FAILURE;
@@ -1622,17 +1624,9 @@ int msSLDParsePolygonFill(CPLXMLNode *psFill, styleObj *psStyle,
     if (psFillName) {
       if (strcasecmp(psFillName, "fill") == 0) {
         if(psCssParam->psChild && psCssParam->psChild->psNext &&
-            psCssParam->psChild->psNext->pszValue)
-          psColor = psCssParam->psChild->psNext->pszValue;
-
-        if (psColor) {
-          nLength = strlen(psColor);
-          /* expecting hexadecimal ex : #aaaaff */
-          if (nLength == 7 && psColor[0] == '#') {
-            psStyle->color.red = msHexToInt(psColor+1);
-            psStyle->color.green = msHexToInt(psColor+3);
-            psStyle->color.blue= msHexToInt(psColor+5);
-          }
+            psCssParam->psChild->psNext->pszValue) {
+          msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                  psStyle, MS_STYLE_BINDING_COLOR);
         }
       } else if (strcasecmp(psFillName, "fill-opacity") == 0) {
         if(psCssParam->psChild &&  psCssParam->psChild->psNext &&
@@ -1676,7 +1670,6 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
   CPLXMLNode *psDisplacement=NULL, *psDisplacementX=NULL, *psDisplacementY=NULL;
   CPLXMLNode *psOpacity=NULL, *psRotation=NULL;
   char *psName=NULL, *psValue = NULL;
-  int nLength = 0;
   char *pszSymbolName = NULL;
   int bFilled = 0;
   CPLXMLNode *psPropertyName=NULL;
@@ -1790,15 +1783,9 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                 strcasecmp(psName, "fill") == 0) {
               if(psCssParam->psChild &&
                   psCssParam->psChild->psNext &&
-                  psCssParam->psChild->psNext->pszValue)
-                psValue = psCssParam->psChild->psNext->pszValue;
-
-              if (psValue) {
-                nLength = strlen(psValue);
-                if (nLength == 7 && psValue[0] == '#') {
-                  msSLDSetColorObject(psValue,
-                                      &psStyle->color);
-                }
+                  psCssParam->psChild->psNext->pszValue) {
+                msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                        psStyle, MS_STYLE_BINDING_COLOR);
               }
             } else if (psName &&
                        strcasecmp(psName, "fill-opacity") == 0) {
@@ -1828,15 +1815,9 @@ int msSLDParseGraphicFillOrStroke(CPLXMLNode *psRoot,
                 strcasecmp(psName, "stroke") == 0) {
               if(psCssParam->psChild &&
                   psCssParam->psChild->psNext &&
-                  psCssParam->psChild->psNext->pszValue)
-                psValue = psCssParam->psChild->psNext->pszValue;
-
-              if (psValue) {
-                nLength = strlen(psValue);
-                if (nLength == 7 && psValue[0] == '#') {
-                  msSLDSetColorObject(psValue,
-                                      &psStyle->outlinecolor);
-                }
+                  psCssParam->psChild->psNext->pszValue) {
+                msSLDParseOgcExpression(psCssParam->psChild->psNext,
+                                        psStyle, MS_STYLE_BINDING_OUTLINECOLOR);
               }
             } else if (psName &&
                        strcasecmp(psName, "stroke-opacity") == 0) {

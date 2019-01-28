@@ -157,9 +157,19 @@ static void bindStyle(layerObj *layer, shapeObj *shape, styleObj *style, int dra
       MS_INIT_COLOR(style->color, -1,-1,-1,255);
       bindColorAttribute(&style->color, shape->values[style->bindings[MS_STYLE_BINDING_COLOR].index]);
     }
+    if(style->exprBindings[MS_STYLE_BINDING_COLOR].type == MS_EXPRESSION) {
+      char * color = msEvalTextExpression(&(style->exprBindings[MS_STYLE_BINDING_COLOR]), shape);
+      bindColorAttribute(&style->color, color);
+      msFree(color);
+    }
     if(style->bindings[MS_STYLE_BINDING_OUTLINECOLOR].index != -1 && !MS_DRAW_QUERY(drawmode)) {
       MS_INIT_COLOR(style->outlinecolor, -1,-1,-1,255);
       bindColorAttribute(&style->outlinecolor, shape->values[style->bindings[MS_STYLE_BINDING_OUTLINECOLOR].index]);
+    }
+    if(style->exprBindings[MS_STYLE_BINDING_OUTLINECOLOR].type == MS_EXPRESSION) {
+      char * color = msEvalTextExpression(&(style->exprBindings[MS_STYLE_BINDING_OUTLINECOLOR]), shape);
+      bindColorAttribute(&style->outlinecolor, color);
+      msFree(color);
     }
     if(style->bindings[MS_STYLE_BINDING_OUTLINEWIDTH].index != -1) {
       style->outlinewidth = 1;
@@ -688,6 +698,7 @@ char *msEvalTextExpressionInternal(expressionObj *expr, shapeObj *shape, int bJS
     msFree(result);
     result = NULL;
   }
+  fprintf(stderr, "DEBUG: expr: \"%s\" = \"%s\"\n", expr->string, result);
   return result;
 }
 
