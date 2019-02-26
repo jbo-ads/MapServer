@@ -278,6 +278,18 @@ static void bindLabel(layerObj *layer, shapeObj *shape, labelObj *label, int dra
         }
       }
     }
+
+    if (label->bindings[MS_LABEL_BINDING_OFFSET_X].index != -1) {
+      label->offsetx = 0;
+      bindIntegerAttribute(&label->offsetx,
+          shape->values[label->bindings[MS_LABEL_BINDING_OFFSET_X].index]);
+    }
+
+    if (label->bindings[MS_LABEL_BINDING_OFFSET_Y].index != -1) {
+      label->offsety = 0;
+      bindIntegerAttribute(&label->offsety,
+          shape->values[label->bindings[MS_LABEL_BINDING_OFFSET_Y].index]);
+    }
   }
 }
 

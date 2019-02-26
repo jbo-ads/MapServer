@@ -1323,6 +1323,12 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, void *psObj, int binding,
           }
           status = MS_SUCCESS;
           break;
+        case MS_LABEL_BASE + MS_LABEL_BINDING_OFFSET_X:
+          psLabel->offsetx = atoi(psRoot->pszValue);
+          break;
+        case MS_LABEL_BASE + MS_LABEL_BINDING_OFFSET_Y:
+          psLabel->offsety = atoi(psRoot->pszValue);
+          break;
         default:
           break;
       }
@@ -3040,6 +3046,10 @@ int ParseTextPointPlacement(CPLXMLNode *psRoot, classObj *psClass)
         psDisplacementY->psChild->pszValue) {
       psLabelObj->offsetx = atoi(psDisplacementX->psChild->pszValue);
       psLabelObj->offsety = atoi(psDisplacementY->psChild->pszValue);
+      msSLDParseOgcExpression(psDisplacementX->psChild, psLabelObj,
+          MS_LABEL_BINDING_OFFSET_X, MS_OBJ_LABEL);
+      msSLDParseOgcExpression(psDisplacementY->psChild, psLabelObj,
+          MS_LABEL_BINDING_OFFSET_Y, MS_OBJ_LABEL);
     }
   }
 
