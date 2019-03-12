@@ -3297,7 +3297,7 @@ char *msSLDGetGraphicSLD(styleObj *psStyle, layerObj *psLayer,
   char szTmp[512];
   char szFormat[4];
   int i = 0, nLength = 0;
-  int bFillColor = 0, bColorAvailable=0;
+  int bColorAvailable=0;
   int bGenerateDefaultSymbol = 0;
   char *pszSymbolName= NULL;
   char sNameSpace[10];
@@ -3364,100 +3364,92 @@ char *msSLDGetGraphicSLD(styleObj *psStyle, layerObj *psLayer,
 
 
           if (pszSymbolName) {
-            colorObj sTmpColor;
+            colorObj sTmpFillColor;
+            colorObj sTmpStrokeColor;
+            int hasFillColor = 0;
+            int hasStrokeColor = 0;
 
             snprintf(szTmp, sizeof(szTmp), "<%sGraphic>\n", sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
-
-
 
             snprintf(szTmp, sizeof(szTmp), "<%sMark>\n", sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
 
             snprintf(szTmp, sizeof(szTmp), "<%sWellKnownName>%s</%sWellKnownName>\n",
-                     sNameSpace, pszSymbolName, sNameSpace);
+                sNameSpace, pszSymbolName, sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
-
 
             if (psStyle->color.red != -1 &&
                 psStyle->color.green != -1 &&
-                psStyle->color.blue != -1) {
-              sTmpColor.red = psStyle->color.red;
-              sTmpColor.green = psStyle->color.green;
-              sTmpColor.blue = psStyle->color.blue;
-              bFillColor =1;
-            } else if (psStyle->outlinecolor.red != -1 &&
-                       psStyle->outlinecolor.green != -1 &&
-                       psStyle->outlinecolor.blue != -1) {
-              sTmpColor.red = psStyle->outlinecolor.red;
-              sTmpColor.green = psStyle->outlinecolor.green;
-              sTmpColor.blue = psStyle->outlinecolor.blue;
-              bFillColor = 0;
-            } else {
-              sTmpColor.red = 128;
-              sTmpColor.green = 128;
-              sTmpColor.blue = 128;
-              bFillColor =1;
+                psStyle->color.blue != -1)
+            {
+              sTmpFillColor.red = psStyle->color.red;
+              sTmpFillColor.green = psStyle->color.green;
+              sTmpFillColor.blue = psStyle->color.blue;
+              hasFillColor = 1;
+            }
+            if (psStyle->outlinecolor.red != -1 &&
+                psStyle->outlinecolor.green != -1 &&
+                psStyle->outlinecolor.blue != -1)
+            {
+              sTmpStrokeColor.red = psStyle->outlinecolor.red;
+              sTmpStrokeColor.green = psStyle->outlinecolor.green;
+              sTmpStrokeColor.blue = psStyle->outlinecolor.blue;
+              hasStrokeColor = 1;
+            }
+            if (!hasFillColor && !hasStrokeColor)
+            {
+              sTmpFillColor.red = 128;
+              sTmpFillColor.green = 128;
+              sTmpFillColor.blue = 128;
+              hasFillColor = 1;
             }
 
-
-            if (psLayer->type == MS_LAYER_POINT) {
-              if (psSymbol->filled || bFillColor) {
-                snprintf(szTmp, sizeof(szTmp), "<%sFill>\n", sNameSpace);
-                pszSLD = msStringConcatenate(pszSLD, szTmp);
-                snprintf(szTmp, sizeof(szTmp), "<%s name=\"fill\">#%02x%02x%02x</%s>\n",
-                         sCssParam,sTmpColor.red,
-                         sTmpColor.green,
-                         sTmpColor.blue,
-                         sCssParam);
-              } else {
-                snprintf(szTmp, sizeof(szTmp), "<%sStroke>\n", sNameSpace);
-                pszSLD = msStringConcatenate(pszSLD, szTmp);
-                snprintf(szTmp, sizeof(szTmp), "<%s name=\"stroke\">#%02x%02x%02x</%s>\n",
-                         sCssParam,
-                         sTmpColor.red,
-                         sTmpColor.green,
-                         sTmpColor.blue,
-                         sCssParam);
-              }
-            } else {
-              if (bFillColor) {
-                snprintf(szTmp, sizeof(szTmp), "<%sFill>\n", sNameSpace);
-                pszSLD = msStringConcatenate(pszSLD, szTmp);
-                snprintf(szTmp, sizeof(szTmp), "<%s name=\"fill\">#%02x%02x%02x</%s>\n",
-                         sCssParam,
-                         sTmpColor.red,
-                         sTmpColor.green,
-                         sTmpColor.blue,
-                         sCssParam);
-              } else {
-                snprintf(szTmp, sizeof(szTmp), "<%sStroke>\n", sNameSpace);
-                pszSLD = msStringConcatenate(pszSLD, szTmp);
-                snprintf(szTmp, sizeof(szTmp), "<%s name=\"stroke\">#%02x%02x%02x</%s>\n",
-                         sCssParam,
-                         sTmpColor.red,
-                         sTmpColor.green,
-                         sTmpColor.blue,
-                         sCssParam);
-              }
-            }
-            pszSLD = msStringConcatenate(pszSLD, szTmp);
-
-            if ((psLayer->type == MS_LAYER_POINT && psSymbol->filled) ||
-                bFillColor)
+            if (hasFillColor) {
+              snprintf(szTmp, sizeof(szTmp), "<%sFill>\n", sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              snprintf(szTmp, sizeof(szTmp), "<%s name=\"fill\">#%02x%02x%02x</%s>\n",
+                  sCssParam,
+                  sTmpFillColor.red,
+                  sTmpFillColor.green,
+                  sTmpFillColor.blue,
+                  sCssParam);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
               snprintf(szTmp, sizeof(szTmp), "</%sFill>\n", sNameSpace);
-            else
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+            }
+            if (hasStrokeColor) {
+              snprintf(szTmp, sizeof(szTmp), "<%sStroke>\n", sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              snprintf(szTmp, sizeof(szTmp), "<%s name=\"stroke\">#%02x%02x%02x</%s>\n",
+                  sCssParam,
+                  sTmpStrokeColor.red,
+                  sTmpStrokeColor.green,
+                  sTmpStrokeColor.blue,
+                  sCssParam);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              if (psStyle->width > 0)
+              {
+                snprintf(szTmp, sizeof(szTmp), "<%s name=\"stroke-width\">%g</%s>\n",
+                    sCssParam,
+                    psStyle->width,
+                    sCssParam);
+                pszSLD = msStringConcatenate(pszSLD, szTmp);
+              }
               snprintf(szTmp, sizeof(szTmp), "</%sStroke>\n", sNameSpace);
-            pszSLD = msStringConcatenate(pszSLD, szTmp);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+            }
 
             snprintf(szTmp, sizeof(szTmp), "</%sMark>\n", sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
 
             if (psStyle->size > 0) {
               snprintf(szTmp, sizeof(szTmp), "<%sSize>%g</%sSize>\n", sNameSpace,
-                       psStyle->size, sNameSpace);
+                  psStyle->size, sNameSpace);
               pszSLD = msStringConcatenate(pszSLD, szTmp);
             }
+
+            /// TODO: Add <Rotation>, <Opacity> and <Displacement>
 
             snprintf(szTmp, sizeof(szTmp), "</%sGraphic>\n", sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
@@ -4304,6 +4296,7 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
         /*      Lines using symbols TODO (specially for dash lines)             */
         /* -------------------------------------------------------------------- */
         if (psLayer->type == MS_LAYER_LINE) {
+          fprintf(stderr,"DEBUGJBO: ligne\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGenerateLineSLD(psStyle, psLayer, nVersion);
@@ -4314,6 +4307,7 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
           }
 
         } else if (psLayer->type == MS_LAYER_POLYGON) {
+          fprintf(stderr,"DEBUGJBO: polygone\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGeneratePolygonSLD(psStyle, psLayer, nVersion);
@@ -4324,6 +4318,7 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
           }
 
         } else if (psLayer->type == MS_LAYER_POINT) {
+          fprintf(stderr,"DEBUGJBO: point\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGeneratePointSLD(psStyle, psLayer, nVersion);
@@ -4337,6 +4332,7 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
         /* label if it exists */
         pszSLD = msSLDGenerateTextSLD(psLayer->class[i], psLayer, nVersion);
         if (pszSLD) {
+          fprintf(stderr,"DEBUGJBO: texte\n");
           pszFinalSLD = msStringConcatenate(pszFinalSLD, pszSLD);
           free(pszSLD);
         }
