@@ -3444,12 +3444,37 @@ char *msSLDGetGraphicSLD(styleObj *psStyle, layerObj *psLayer,
             pszSLD = msStringConcatenate(pszSLD, szTmp);
 
             if (psStyle->size > 0) {
-              snprintf(szTmp, sizeof(szTmp), "<%sSize>%g</%sSize>\n", sNameSpace,
-                  psStyle->size, sNameSpace);
+              snprintf(szTmp, sizeof(szTmp), "<%sSize>%g</%sSize>\n",
+                  sNameSpace, psStyle->size, sNameSpace);
               pszSLD = msStringConcatenate(pszSLD, szTmp);
             }
 
-            /// TODO: Add <Rotation>, <Opacity> and <Displacement>
+            if (fmod(psStyle->angle, 360))
+            {
+              snprintf(szTmp, sizeof(szTmp), "<%sRotation>%g</%sRotation>\n",
+                  sNameSpace, psStyle->angle, sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+            }
+            if (psStyle->opacity < 100)
+            {
+              snprintf(szTmp, sizeof(szTmp), "<%sOpacity>%g</%sOpacity>\n",
+                  sNameSpace, psStyle->opacity/100.0, sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+            }
+
+            if (psStyle->offsetx != 0 || psStyle->offsety != 0)
+            {
+              snprintf(szTmp, sizeof(szTmp), "<%sDisplacement>\n", sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              snprintf(szTmp, sizeof(szTmp), "<%sDisplacementX>%g</%sDisplacementX>\n",
+                  sNameSpace, psStyle->offsetx, sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              snprintf(szTmp, sizeof(szTmp), "<%sDisplacementY>%g</%sDisplacementY>\n",
+                  sNameSpace, psStyle->offsety, sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+              snprintf(szTmp, sizeof(szTmp), "</%sDisplacement>\n", sNameSpace);
+              pszSLD = msStringConcatenate(pszSLD, szTmp);
+            }
 
             snprintf(szTmp, sizeof(szTmp), "</%sGraphic>\n", sNameSpace);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
@@ -3870,6 +3895,14 @@ char *msSLDGeneratePolygonSLD(styleObj *psStyle, layerObj *psLayer, int nVersion
              sCssParam,dfSize,sCssParam);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
+    if(psStyle->outlinecolor.alpha != 255 && psStyle->outlinecolor.alpha != -1)
+    {
+      snprintf(szTmp, sizeof(szTmp),
+          "<%s name=\"stroke-opacity\">%.2f</%s>\n",
+          sCssParam, psStyle->outlinecolor.alpha/255.0, sCssParam);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+    }
+
     snprintf(szTmp, sizeof(szTmp), "</%sStroke>\n",  sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
   }
@@ -3938,9 +3971,9 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
   char **aszFontsParts = NULL;
   int nFontParts = 0;
   char szHexColor[7];
-  int nColorRed=-1, nColorGreen=-1, nColorBlue=-1;
   double dfAnchorX = 0.5, dfAnchorY = 0.5;
   int i = 0;
+  int lid;
   char sCssParam[30];
   char sNameSpace[10];
   labelObj *psLabelObj = NULL;
@@ -3956,14 +3989,34 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
     strcpy(sNameSpace, "se:");
 
 
-  if (psClass && psLayer && psLayer->labelitem &&
-      strlen(psLayer->labelitem) > 0 && psClass->numlabels > 0) {
-    psLabelObj = psClass->labels[0];
+  if (!psLayer || !psClass) return pszSLD;
+
+  for (lid=0 ; lid < psClass->numlabels ; lid++)
+  {
+    char * psLabelText = NULL;
+    psLabelObj = psClass->labels[lid];
+
+    if (psLabelObj->text.string)
+    {
+      psLabelText = msReplaceSubstring(psLabelObj->text.string, "[", "<ogc:PropertyName>");
+      psLabelText = msReplaceSubstring(psLabelText, "]", "</ogc:PropertyName>");
+    }
+    else if (psClass->text.string)
+    {
+      psLabelText = msReplaceSubstring(psClass->text.string, "[", "<ogc:PropertyName>");
+      psLabelText = msReplaceSubstring(psLabelText, "]", "</ogc:PropertyName>");
+    }
+    else if (psLayer->labelitem)
+    {
+      psLabelText = psLayer->labelitem;
+    }
+    if (!psLabelText) continue; // Can't find text content for this <Label>
+
     snprintf(szTmp, sizeof(szTmp), "<%sTextSymbolizer>\n",  sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
-    snprintf(szTmp, sizeof(szTmp), "<%sLabel><ogc:PropertyName>%s</ogc:PropertyName></%sLabel>\n",  sNameSpace,
-             psLayer->labelitem, sNameSpace);
+    snprintf(szTmp, sizeof(szTmp), "<%sLabel>%s</%sLabel>\n",
+        sNameSpace, psLabelText, sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
     /* -------------------------------------------------------------------- */
@@ -3981,29 +4034,29 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
 
         /* assuming first one is font-family */
         snprintf(szTmp, sizeof(szTmp),
-                 "<%s name=\"font-family\">%s</%s>\n",
-                 sCssParam, aszFontsParts[0], sCssParam);
+            "<%s name=\"font-family\">%s</%s>\n",
+            sCssParam, aszFontsParts[0], sCssParam);
         pszSLD = msStringConcatenate(pszSLD, szTmp);
         for (i=1; i<nFontParts; i++) {
           if (strcasecmp(aszFontsParts[i], "italic") == 0 ||
               strcasecmp(aszFontsParts[i], "oblique") == 0) {
             snprintf(szTmp, sizeof(szTmp),
-                     "<%s name=\"font-style\">%s</%s>\n",
-                     sCssParam, aszFontsParts[i], sCssParam);
+                "<%s name=\"font-style\">%s</%s>\n",
+                sCssParam, aszFontsParts[i], sCssParam);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
           } else if (strcasecmp(aszFontsParts[i], "bold") == 0) {
             snprintf(szTmp, sizeof(szTmp),
-                     "<%s name=\"font-weight\">%s</%s>\n",
-                     sCssParam,
-                     aszFontsParts[i], sCssParam);
+                "<%s name=\"font-weight\">%s</%s>\n",
+                sCssParam,
+                aszFontsParts[i], sCssParam);
             pszSLD = msStringConcatenate(pszSLD, szTmp);
           }
         }
         /* size */
         if (psLabelObj->size > 0) {
           snprintf(szTmp, sizeof(szTmp),
-                   "<%s name=\"font-size\">%d</%s>\n",
-                   sCssParam, psLabelObj->size, sCssParam);
+              "<%s name=\"font-size\">%d</%s>\n",
+              sCssParam, psLabelObj->size, sCssParam);
           pszSLD = msStringConcatenate(pszSLD, szTmp);
         }
         snprintf(szTmp, sizeof(szTmp), "</%sFont>\n",  sNameSpace);
@@ -4015,7 +4068,7 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
 
     /* label placement */
     snprintf(szTmp, sizeof(szTmp), "<%sLabelPlacement>\n<%sPointPlacement>\n",
-             sNameSpace, sNameSpace  );
+        sNameSpace, sNameSpace  );
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
     snprintf(szTmp, sizeof(szTmp), "<%sAnchorPoint>\n", sNameSpace);
@@ -4054,10 +4107,10 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
       dfAnchorY = 1;
     }
     snprintf(szTmp, sizeof(szTmp), "<%sAnchorPointX>%.1f</%sAnchorPointX>\n",
-             sNameSpace, dfAnchorX, sNameSpace);
+        sNameSpace, dfAnchorX, sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
     snprintf(szTmp, sizeof(szTmp), "<%sAnchorPointY>%.1f</%sAnchorPointY>\n", sNameSpace,
-             dfAnchorY, sNameSpace);
+        dfAnchorY, sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
     snprintf(szTmp, sizeof(szTmp), "</%sAnchorPoint>\n",  sNameSpace);
@@ -4070,12 +4123,12 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
 
       if (psLabelObj->offsetx > 0) {
         snprintf(szTmp, sizeof(szTmp), "<%sDisplacementX>%d</%sDisplacementX>\n",
-                 sNameSpace, psLabelObj->offsetx, sNameSpace);
+            sNameSpace, psLabelObj->offsetx, sNameSpace);
         pszSLD = msStringConcatenate(pszSLD, szTmp);
       }
       if (psLabelObj->offsety > 0) {
         snprintf(szTmp, sizeof(szTmp), "<%sDisplacementY>%d</%sDisplacementY>\n",
-                 sNameSpace, psLabelObj->offsety, sNameSpace);
+            sNameSpace, psLabelObj->offsety, sNameSpace);
         pszSLD = msStringConcatenate(pszSLD, szTmp);
       }
 
@@ -4085,40 +4138,52 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
     /* rotation */
     if (psLabelObj->angle > 0) {
       snprintf(szTmp, sizeof(szTmp), "<%sRotation>%.2f</%sRotation>\n",
-               sNameSpace, psLabelObj->angle, sNameSpace);
+          sNameSpace, psLabelObj->angle, sNameSpace);
       pszSLD = msStringConcatenate(pszSLD, szTmp);
     }
 
-    /* TODO : support Halo parameter => shadow */
-
-    snprintf(szTmp, sizeof(szTmp), "</%sPointPlacement>\n</%sLabelPlacement>\n", sNameSpace, sNameSpace);
+    snprintf(szTmp, sizeof(szTmp), "</%sPointPlacement>\n</%sLabelPlacement>\n",
+        sNameSpace, sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
+    if (psLabelObj->outlinecolor.red != -1 &&
+        psLabelObj->outlinecolor.green != -1 &&
+        psLabelObj->outlinecolor.blue != -1)
+    {
+      snprintf(szTmp, sizeof(szTmp), "<%sHalo>\n", sNameSpace);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+      snprintf(szTmp, sizeof(szTmp), "<%sRadius>%d</%sRadius>\n",
+          sNameSpace, psLabelObj->outlinewidth, sNameSpace);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+      snprintf(szTmp, sizeof(szTmp), "<%sFill>\n", sNameSpace);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+      snprintf(szTmp, sizeof(szTmp), "<%s name=\"fill\">#%02x%02x%02x</%s>\n",
+          sCssParam,
+          psLabelObj->outlinecolor.red,
+          psLabelObj->outlinecolor.green,
+          psLabelObj->outlinecolor.blue,
+          sCssParam);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+      snprintf(szTmp, sizeof(szTmp), "</%sFill>\n", sNameSpace);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+      snprintf(szTmp, sizeof(szTmp), "</%sHalo>\n", sNameSpace);
+      pszSLD = msStringConcatenate(pszSLD, szTmp);
+    }
 
     /* color */
     if (psLabelObj->color.red != -1 &&
         psLabelObj->color.green != -1 &&
-        psLabelObj->color.blue != -1) {
-      nColorRed = psLabelObj->color.red;
-      nColorGreen = psLabelObj->color.green;
-      nColorBlue = psLabelObj->color.blue;
-    } else if (psLabelObj->outlinecolor.red != -1 &&
-               psLabelObj->outlinecolor.green != -1 &&
-               psLabelObj->outlinecolor.blue != -1) {
-      nColorRed = psLabelObj->outlinecolor.red;
-      nColorGreen = psLabelObj->outlinecolor.green;
-      nColorBlue = psLabelObj->outlinecolor.blue;
-    }
-    if (nColorRed >= 0 && nColorGreen >= 0  && nColorBlue >=0) {
+        psLabelObj->color.blue != -1)
+    {
       snprintf(szTmp, sizeof(szTmp), "<%sFill>\n", sNameSpace );
       pszSLD = msStringConcatenate(pszSLD, szTmp);
 
-      sprintf(szHexColor,"%02hhx%02hhx%02hhx",nColorRed,
-              nColorGreen, nColorBlue);
+      sprintf(szHexColor,"%02hhx%02hhx%02hhx",psLabelObj->color.red,
+          psLabelObj->color.green, psLabelObj->color.blue);
 
       snprintf(szTmp, sizeof(szTmp),
-               "<%s name=\"fill\">#%s</%s>\n",
-               sCssParam, szHexColor, sCssParam);
+          "<%s name=\"fill\">#%s</%s>\n",
+          sCssParam, szHexColor, sCssParam);
       pszSLD = msStringConcatenate(pszSLD, szTmp);
 
       snprintf(szTmp, sizeof(szTmp), "</%sFill>\n",  sNameSpace);
