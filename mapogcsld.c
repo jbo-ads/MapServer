@@ -2869,7 +2869,7 @@ int msSLDParseTextParams(CPLXMLNode *psRoot, layerObj *psLayer,
 
     if (pszClassText) { /* pszItem) */
 
-      msLoadExpressionString(&psClass->text, pszClassText);
+      msLoadExpressionString(&psLabelObj->text, pszClassText);
       free(pszClassText);
 
       /* font */
@@ -4361,7 +4361,6 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
         /*      Lines using symbols TODO (specially for dash lines)             */
         /* -------------------------------------------------------------------- */
         if (psLayer->type == MS_LAYER_LINE) {
-          fprintf(stderr,"DEBUGJBO: ligne\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGenerateLineSLD(psStyle, psLayer, nVersion);
@@ -4372,7 +4371,6 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
           }
 
         } else if (psLayer->type == MS_LAYER_POLYGON) {
-          fprintf(stderr,"DEBUGJBO: polygone\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGeneratePolygonSLD(psStyle, psLayer, nVersion);
@@ -4383,7 +4381,6 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
           }
 
         } else if (psLayer->type == MS_LAYER_POINT) {
-          fprintf(stderr,"DEBUGJBO: point\n");
           for (j=0; j<psLayer->class[i]->numstyles; j++) {
             psStyle = psLayer->class[i]->styles[j];
             pszSLD = msSLDGeneratePointSLD(psStyle, psLayer, nVersion);
@@ -4397,7 +4394,6 @@ char *msSLDGenerateSLDLayer(layerObj *psLayer, int nVersion)
         /* label if it exists */
         pszSLD = msSLDGenerateTextSLD(psLayer->class[i], psLayer, nVersion);
         if (pszSLD) {
-          fprintf(stderr,"DEBUGJBO: texte\n");
           pszFinalSLD = msStringConcatenate(pszFinalSLD, pszSLD);
           free(pszSLD);
         }

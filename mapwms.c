@@ -4992,6 +4992,10 @@ int msWMSGetStyles(mapObj *map, int nVersion, char **names,
 
       msFreeCharArray(layers, numlayers);
     }
+    if (strcasecmp(names[i], "SLD_BODY") == 0)
+    {
+      msSLDApplySLD(map, values[i], -1, NULL, NULL);
+    }
 
   }
 
