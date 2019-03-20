@@ -275,23 +275,49 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer, char *pszStyleLayerNa
               /*aliases may have been used as part of the sld text symbolizer for
                 label element. Try to process it if that is the case #3114*/
               if (msLayerOpen(GET_LAYER(map, i)) == MS_SUCCESS &&
-                  msLayerGetItems(GET_LAYER(map, i)) == MS_SUCCESS) {
-                if (GET_LAYER(map, i)->class[iClass]->text.string) {
-                  for(z=0; z<GET_LAYER(map, i)->numitems; z++) {
-                    if (!GET_LAYER(map, i)->items[z] || strlen(GET_LAYER(map, i)->items[z]) <= 0)
-                      continue;
-                    snprintf(szTmp, sizeof(szTmp), "%s_alias", GET_LAYER(map, i)->items[z]);
-                    pszFullName = msOWSLookupMetadata(&(GET_LAYER(map, i)->metadata), "G", szTmp);
-                    pszTmp1 = msStrdup( GET_LAYER(map, i)->class[iClass]->text.string);
-                    if (pszFullName != NULL && (strstr(pszTmp1, pszFullName) != NULL)) {
-                      char *tmpstr1= NULL;
-                      tmpstr1 = msReplaceSubstring(pszTmp1, pszFullName, GET_LAYER(map, i)->items[z]);
-                      pszTmp2 = (char *)malloc(sizeof(char)*(strlen(tmpstr1)+3));
-                      sprintf(pszTmp2,"(%s)",tmpstr1);
-                      msLoadExpressionString(&(GET_LAYER(map, i)->class[iClass]->text), pszTmp2);
-                      msFree(pszTmp2);
+                  msLayerGetItems(GET_LAYER(map, i)) == MS_SUCCESS)
+              {
+                int lbl;
+                for(z=0; z<GET_LAYER(map, i)->numitems; z++) {
+                  if (!GET_LAYER(map, i)->items[z] || strlen(GET_LAYER(map, i)->items[z]) <= 0)
+                    continue;
+                  snprintf(szTmp, sizeof(szTmp), "%s_alias", GET_LAYER(map, i)->items[z]);
+                  pszFullName = msOWSLookupMetadata(&(GET_LAYER(map, i)->metadata), "G", szTmp);
+                  if (pszFullName)
+                  {
+                    // Process class->text
+                    if (GET_LAYER(map, i)->class[iClass]->text.string)
+                    {
+                      pszTmp1 = msStrdup( GET_LAYER(map, i)->class[iClass]->text.string);
+                      if (strstr(pszTmp1, pszFullName)) {
+                        char *tmpstr1= NULL;
+                        tmpstr1 = msReplaceSubstring(pszTmp1, pszFullName, GET_LAYER(map, i)->items[z]);
+                        pszTmp2 = (char *)malloc(sizeof(char)*(strlen(tmpstr1)+3));
+                        sprintf(pszTmp2,"(%s)",tmpstr1);
+                        msLoadExpressionString(&(GET_LAYER(map, i)->class[iClass]->text), pszTmp2);
+                        msFree(pszTmp2);
+                      }
+                      msFree(pszTmp1);
                     }
-                    msFree(pszTmp1);
+                    // Process all label->text in class as well
+                    for (lbl=0 ; lbl<GET_LAYER(map, i)->class[iClass]->numlabels ; lbl++)
+                    {
+                      labelObj * label = GET_LAYER(map, i)->class[iClass]->labels[lbl];
+                      if (label->text.string)
+                      {
+                        pszTmp1 = msStrdup(label->text.string);
+                        if (strstr(pszTmp1, pszFullName))
+                        {
+                          char * tmpstr1 = msReplaceSubstring(pszTmp1, pszFullName,
+                              GET_LAYER(map, i)->items[z]);
+                          pszTmp2 = (char *)malloc(sizeof(char)*(strlen(tmpstr1)+3));
+                          sprintf(pszTmp2,"(%s)",tmpstr1);
+                          msLoadExpressionString(&(label->text), pszTmp2);
+                          msFree(pszTmp2);
+                        }
+                        msFree(pszTmp1);
+                      }
+                    }
                   }
                 }
               }
