@@ -1337,6 +1337,8 @@ int msSLDParseOgcExpression(CPLXMLNode *psRoot, void *psObj, int binding,
           break;
         case MS_STYLE_BASE + MS_STYLE_BINDING_OPACITY:
           psStyle->opacity = atof(psRoot->pszValue)*100;
+          psStyle->color.alpha = atof(psRoot->pszValue)*255;
+          psStyle->outlinecolor.alpha = atof(psRoot->pszValue)*255;
           status = MS_SUCCESS;
           break;
         case MS_STYLE_BASE + MS_STYLE_BINDING_COLOR:
@@ -4026,11 +4028,13 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
     {
       psLabelText = msReplaceSubstring(psLabelObj->text.string, "[", "<ogc:PropertyName>");
       psLabelText = msReplaceSubstring(psLabelText, "]", "</ogc:PropertyName>");
+      psLabelText = msReplaceSubstring(psLabelText, "\"", "");
     }
     else if (psClass->text.string)
     {
       psLabelText = msReplaceSubstring(psClass->text.string, "[", "<ogc:PropertyName>");
       psLabelText = msReplaceSubstring(psLabelText, "]", "</ogc:PropertyName>");
+      psLabelText = msReplaceSubstring(psLabelText, "\"", "");
     }
     else if (psLayer->labelitem)
     {
