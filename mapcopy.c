@@ -317,8 +317,7 @@ int msCopyLabel(labelObj *dst, labelObj *src)
   for(i=0; i<MS_LABEL_BINDING_LENGTH; i++) {
     MS_COPYSTRING(dst->bindings[i].item, src->bindings[i].item);
     dst->bindings[i].index = src->bindings[i].index; /* no way to use the macros */
-    MS_COPYSTRING(dst->exprBindings[i].string, src->exprBindings[i].string);
-    dst->exprBindings[i].type = src->exprBindings[i].type;
+    msCopyExpression(&(dst->exprBindings[i]), &(src->exprBindings[i]));
   }
   MS_COPYSTELEM(numbindings);
   MS_COPYSTELEM(nexprbindings);
@@ -474,8 +473,7 @@ int msCopyStyle(styleObj *dst, styleObj *src)
   for(i=0; i<MS_STYLE_BINDING_LENGTH; i++) {
     MS_COPYSTRING(dst->bindings[i].item, src->bindings[i].item);
     dst->bindings[i].index = src->bindings[i].index; /* no way to use the macros */
-    MS_COPYSTRING(dst->exprBindings[i].string, src->exprBindings[i].string);
-    dst->exprBindings[i].type = src->exprBindings[i].type;
+    msCopyExpression(&(dst->exprBindings[i]), &(src->exprBindings[i]));
   }
   MS_COPYSTELEM(numbindings);
   MS_COPYSTELEM(nexprbindings);

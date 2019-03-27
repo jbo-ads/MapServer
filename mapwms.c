@@ -4990,7 +4990,6 @@ int msWMSGetStyles(mapObj *map, int nVersion, char **names,
         }
       }
 
-      msFreeCharArray(layers, numlayers);
     }
     if (strcasecmp(names[i], "SLD_BODY") == 0)
     {
@@ -4998,6 +4997,7 @@ int msWMSGetStyles(mapObj *map, int nVersion, char **names,
     }
 
   }
+  msFreeCharArray(layers, numlayers);
 
   /* free the stuff used for nested layers */
   for (i = 0; i < map->numlayers; i++) {
