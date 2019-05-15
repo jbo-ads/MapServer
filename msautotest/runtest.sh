@@ -68,17 +68,16 @@ run_test_py() {
 
 cd gdal
 rm -rf result/
-list=$(
-  printf "%s\n" *.map \
-  | grep -v -E \
-    '(offsite_pct_rgb|offsite_pct_rgb_torgb|tileindexmixedsrs.*).map'
+list=$(printf "%s\n" *.map \
+# | grep -v -E \
+#   '(offsite_pct_rgb|offsite_pct_rgb_torgb|tileindexmixedsrs.*).map'
   )
 run_test_py gdal $list
 cd ..
 
 cd misc
 rm -rf result/
-list=$(printf "%s\n" *.map | grep -v quoted_data.map)
+list=$(printf "%s\n" *.map)
 run_test_py misc $list
 cd ..
 
@@ -92,17 +91,13 @@ python3 -m http.server 8000 >&/dev/null & wid=$!
 
 cd renderers
 rm -rf result/
-list=$(grep -L -E -e '(-i |imagetype=)(pdf|svg|cairopng)' *.map)
+list=$(printf "%s\n" *.map)
 run_test_py renderers $list
 cd ..
 
 cd wxs
 rm -rf result/
-list=$(
-  printf "%s\n" *.map \
-  | grep -v -E \
-    '(w[mc]s_tileindexmixedsrs|.*_postgis).map'
-  )
+list=$(printf "%s\n" *.map)
 run_test_py wxs $list
 cd ..
 
