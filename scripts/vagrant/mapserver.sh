@@ -3,7 +3,11 @@
 NUMTHREADS=2 # we have 2 cpus configured
 export NUMTHREADS
 
-cd /vagrant
+sudo mkdir /mapserver
+sudo chown vagrant:vagrant /mapserver
+cd /mapserver
+git clone /vagrant
+cd vagrant
 
 cd msautotest
 python -m SimpleHTTPServer &> /dev/null &
