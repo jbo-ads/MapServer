@@ -31,6 +31,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision "shell", path: "scripts/vagrant/virtualbox-fix.sh"
   config.vm.provision "shell", path: "scripts/vagrant/packages.sh"
   config.vm.provision "shell", path: "scripts/vagrant/postgis.sh"
-  config.vm.provision "shell", path: "scripts/vagrant/mapserver.sh", privileged: false
+  config.vm.provision "shell", path: "scripts/vagrant/mapserver.sh"
 
 end
