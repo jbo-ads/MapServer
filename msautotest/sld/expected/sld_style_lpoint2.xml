@@ -4,7 +4,6 @@
 <UserStyle>
 <se:FeatureTypeStyle>
 <se:Rule>
-<se:Name>lline#0</se:Name>
 <se:LineSymbolizer>
 <se:Stroke>
 <se:SvgParameter name="stroke">#ffff00</se:SvgParameter>
@@ -21,14 +20,11 @@
 <UserStyle>
 <se:FeatureTypeStyle>
 <se:Rule>
-<se:Name>lpolygon#0</se:Name>
 <se:PolygonSymbolizer>
 <se:Fill>
 <se:SvgParameter name="fill">#00ffff</se:SvgParameter>
 <se:SvgParameter name="fill-opacity">0.50</se:SvgParameter>
 </se:Fill>
-</se:PolygonSymbolizer>
-<se:PolygonSymbolizer>
 <se:Stroke>
 <se:SvgParameter name="stroke">#ff00ff</se:SvgParameter>
 <se:SvgParameter name="stroke-width">1.00</se:SvgParameter>
@@ -50,20 +46,21 @@
 <se:Mark>
 <se:WellKnownName>star</se:WellKnownName>
 <se:Fill>
-<se:SvgParameter name="fill">#0000ff</se:SvgParameter>
-<se:SvgParameter name="fill-opacity">0.10</se:SvgParameter>
+<se:SvgParameter name="fill">#3000ff</se:SvgParameter>
+<se:SvgParameter name="fill-opacity">0.30</se:SvgParameter>
 </se:Fill>
 <se:Stroke>
-<se:SvgParameter name="stroke">#ff0000</se:SvgParameter>
-<se:SvgParameter name="stroke-width">1</se:SvgParameter>
+<se:SvgParameter name="stroke">#ff0007</se:SvgParameter>
+<se:SvgParameter name="stroke-width">7</se:SvgParameter>
+<se:SvgParameter name="stroke-opacity">0.70</se:SvgParameter>
 </se:Stroke>
 </se:Mark>
-<se:Size>20</se:Size>
-<se:Rotation>180</se:Rotation>
-<se:Opacity>0.5</se:Opacity>
+<se:Size>25</se:Size>
+<se:Rotation>185</se:Rotation>
+<se:Opacity>0.6</se:Opacity>
 <se:Displacement>
-<se:DisplacementX>2</se:DisplacementX>
-<se:DisplacementY>2</se:DisplacementY>
+<se:DisplacementX>4</se:DisplacementX>
+<se:DisplacementY>4</se:DisplacementY>
 </se:Displacement>
 </se:Graphic>
 </se:PointSymbolizer>
@@ -72,29 +69,29 @@
 <se:Font>
 <se:SvgParameter name="font-family">vera</se:SvgParameter>
 <se:SvgParameter name="font-weight">bold</se:SvgParameter>
-<se:SvgParameter name="font-size">12</se:SvgParameter>
+<se:SvgParameter name="font-size">11</se:SvgParameter>
 </se:Font>
 <se:LabelPlacement>
 <se:PointPlacement>
 <se:AnchorPoint>
-<se:AnchorPointX>0.5</se:AnchorPointX>
-<se:AnchorPointY>0.5</se:AnchorPointY>
+<se:AnchorPointX>0.0</se:AnchorPointX>
+<se:AnchorPointY>0.0</se:AnchorPointY>
 </se:AnchorPoint>
 <se:Displacement>
-<se:DisplacementX>2</se:DisplacementX>
-<se:DisplacementY>20</se:DisplacementY>
+<se:DisplacementX>5</se:DisplacementX>
+<se:DisplacementY>26</se:DisplacementY>
 </se:Displacement>
-<se:Rotation>15.00</se:Rotation>
+<se:Rotation>17.00</se:Rotation>
 </se:PointPlacement>
 </se:LabelPlacement>
 <se:Halo>
-<se:Radius>2</se:Radius>
+<se:Radius>6</se:Radius>
 <se:Fill>
-<se:SvgParameter name="fill">#00ff00</se:SvgParameter>
+<se:SvgParameter name="fill">#60ff00</se:SvgParameter>
 </se:Fill>
 </se:Halo>
 <se:Fill>
-<se:SvgParameter name="fill">#ffffff</se:SvgParameter>
+<se:SvgParameter name="fill">#f4ffff</se:SvgParameter>
 </se:Fill>
 </se:TextSymbolizer>
 </se:Rule>

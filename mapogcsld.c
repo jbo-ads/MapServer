@@ -678,7 +678,13 @@ void  _SLDApplyRuleValues(CPLXMLNode *psRule, layerObj *psLayer,
         else if (pszTitle)
           psLayer->class[psLayer->numclasses-1-i]->name = msStrdup(pszTitle);
         else
-          psLayer->class[psLayer->numclasses-1-i]->name = msStrdup("Unknown");
+        {
+          // Build a name from layer and class info
+          char szTmp[256];
+          snprintf(szTmp, sizeof(szTmp), "%s#%d", psLayer->name,
+              psLayer->numclasses-1-i);
+          psLayer->class[psLayer->numclasses-1-i]->name = msStrdup(szTmp);
+        }
       }
     }
     if (pszTitle) {
@@ -3290,12 +3296,22 @@ char *msSLDGetGraphicSLD(styleObj *psStyle, layerObj *psLayer,
               sTmpStrokeColor.blue = psStyle->outlinecolor.blue;
               sTmpStrokeColor.alpha = psStyle->outlinecolor.alpha;
               hasStrokeColor = 1;
+              // Make defaults implicit
+              if (sTmpStrokeColor.red == 0 &&
+                  sTmpStrokeColor.green == 0 &&
+                  sTmpStrokeColor.blue == 0 &&
+                  sTmpStrokeColor.alpha == 255 &&
+                  psStyle->width == 1)
+              {
+                hasStrokeColor = 0;
+              }
             }
             if (!hasFillColor && !hasStrokeColor)
             {
               sTmpFillColor.red = 128;
               sTmpFillColor.green = 128;
               sTmpFillColor.blue = 128;
+              sTmpFillColor.alpha = 255;
               hasFillColor = 1;
             }
 
@@ -3342,7 +3358,7 @@ char *msSLDGetGraphicSLD(styleObj *psStyle, layerObj *psLayer,
               {
                 snprintf(szTmp, sizeof(szTmp), "<%s name=\"stroke-opacity\">%.2f</%s>\n",
                     sCssParam,
-                    (float)sTmpFillColor.alpha/255.0,
+                    (float)sTmpStrokeColor.alpha/255.0,
                     sCssParam);
                 pszSLD = msStringConcatenate(pszSLD, szTmp);
               }
@@ -3925,6 +3941,7 @@ char *msSLDGenerateTextSLD(classObj *psClass, layerObj *psLayer, int nVersion)
     }
     if (!psLabelText) continue; // Can't find text content for this <Label>
 
+    psLabelText = msReplaceSubstring(psLabelText, "\"", "");
     snprintf(szTmp, sizeof(szTmp), "<%sTextSymbolizer>\n",  sNameSpace);
     pszSLD = msStringConcatenate(pszSLD, szTmp);
 
