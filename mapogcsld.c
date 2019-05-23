@@ -3566,7 +3566,7 @@ char *msSLDGenerateLineSLD(styleObj *psStyle, layerObj *psLayer, int nVersion)
 
   char *pszSLD = NULL;
   char szTmp[100];
-  char szHexColor[7];
+  char szHexColor[100];
   int nSymbol = -1;
   int i = 0;
   double dfSize = 1.0;
@@ -3621,17 +3621,33 @@ char *msSLDGenerateLineSLD(styleObj *psStyle, layerObj *psLayer, int nVersion)
     pszGraphicSLD = NULL;
   }
 
-  if (psStyle->color.red != -1 &&
+  if (psStyle->bindings[MS_STYLE_BINDING_COLOR].item)
+  {
+    snprintf(szHexColor, sizeof(szHexColor),
+        "<ogc:PropertyName>%s</ogc:PropertyName>",
+        psStyle->bindings[MS_STYLE_BINDING_COLOR].item);
+  }
+  else if (psStyle->bindings[MS_STYLE_BINDING_OUTLINECOLOR].item)
+  {
+    snprintf(szHexColor, sizeof(szHexColor),
+        "<ogc:PropertyName>%s</ogc:PropertyName>",
+        psStyle->bindings[MS_STYLE_BINDING_OUTLINECOLOR].item);
+  }
+  else if (psStyle->color.red != -1 &&
       psStyle->color.green != -1 &&
       psStyle->color.blue != -1)
-    sprintf(szHexColor,"%02x%02x%02x",psStyle->color.red,
-            psStyle->color.green,psStyle->color.blue);
+  {
+    snprintf(szHexColor,sizeof(szHexColor),"#%02x%02x%02x",psStyle->color.red,
+        psStyle->color.green,psStyle->color.blue);
+  }
   else
-    sprintf(szHexColor,"%02x%02x%02x",psStyle->outlinecolor.red,
-            psStyle->outlinecolor.green,psStyle->outlinecolor.blue);
+  {
+    snprintf(szHexColor,sizeof(szHexColor),"#%02x%02x%02x",psStyle->outlinecolor.red,
+        psStyle->outlinecolor.green,psStyle->outlinecolor.blue);
+  }
 
   snprintf(szTmp,  sizeof(szTmp),
-           "<%s name=\"stroke\">#%s</%s>\n",
+           "<%s name=\"stroke\">%s</%s>\n",
            sCssParam, szHexColor, sCssParam);
   pszSLD = msStringConcatenate(pszSLD, szTmp);
 
@@ -3654,17 +3670,28 @@ char *msSLDGenerateLineSLD(styleObj *psStyle, layerObj *psLayer, int nVersion)
   if (nSymbol <0)
     dfSize = 1.0;
   else {
-    if (psStyle->size > 0)
-      dfSize = psStyle->size;
-    else if (psStyle->width > 0)
-      dfSize = psStyle->width;
-    else
-      dfSize = 1;
+      if (psStyle->size > 0)
+        dfSize = psStyle->size;
+      else if (psStyle->width > 0)
+        dfSize = psStyle->width;
+      else
+        dfSize = 1;
   }
 
-  snprintf(szTmp, sizeof(szTmp),
-           "<%s name=\"stroke-width\">%.2f</%s>\n",
-           sCssParam, dfSize, sCssParam);
+  if (psStyle->bindings[MS_STYLE_BINDING_WIDTH].item)
+  {
+    snprintf(szTmp, sizeof(szTmp),
+        "<%s name=\"stroke-width\"><ogc:PropertyName>%s</ogc:PropertyName></%s>\n",
+        sCssParam,
+        psStyle->bindings[MS_STYLE_BINDING_WIDTH].item,
+        sCssParam);
+  }
+  else
+  {
+    snprintf(szTmp, sizeof(szTmp),
+        "<%s name=\"stroke-width\">%.2f</%s>\n",
+        sCssParam, dfSize, sCssParam);
+  }
   pszSLD = msStringConcatenate(pszSLD, szTmp);
 
   /* -------------------------------------------------------------------- */
