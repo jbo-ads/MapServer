@@ -928,6 +928,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   char        cache=MS_FALSE;
   int         maxnumstyles=1;
   featureListNodeObjPtr shpcache=NULL, current=NULL;
+  int classindex = -1;
   int nclasses = 0;
   int *classgroup = NULL;
   double minfeaturesize = -1;
@@ -1093,9 +1094,6 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     return MS_FAILURE;
   }
 
-  /* step through the target shapes */
-  msInitShape(&shape);
-
   nclasses = 0;
   classgroup = NULL;
   if(layer->classgroup && layer->numclasses > 0)
@@ -1104,21 +1102,36 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   if(layer->minfeaturesize > 0)
     minfeaturesize = Pix2LayerGeoref(map, layer, layer->minfeaturesize);
 
-  while((status = msLayerNextShape(layer, &shape)) == MS_SUCCESS) {
 
-    /* Check if the shape size is ok to be drawn */
-    if((shape.type == MS_SHAPE_LINE || shape.type == MS_SHAPE_POLYGON) && (minfeaturesize > 0) && (msShapeCheckSize(&shape, minfeaturesize) == MS_FALSE)) {
-      if(layer->debug >= MS_DEBUGLEVEL_V)
-        msDebug("msDrawVectorLayer(): Skipping shape (%ld) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
+  /* step through the target shapes and their classes */
+  msInitShape(&shape);
+  classindex = -1;
+  for (;;) {
+    if (classindex == -1) {
+      status = msLayerNextShape(layer, &shape);
+      if (status != MS_SUCCESS) {
+        msFreeShape(&shape);
+        break;
+      }
+
+      /* Check if the shape size is ok to be drawn */
+      if((shape.type == MS_SHAPE_LINE || shape.type == MS_SHAPE_POLYGON) && (minfeaturesize > 0) && (msShapeCheckSize(&shape, minfeaturesize) == MS_FALSE)) {
+        if(layer->debug >= MS_DEBUGLEVEL_V)
+          msDebug("msDrawVectorLayer(): Skipping shape (%ld) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
+        msFreeShape(&shape);
+        continue;
+      }
+    }
+
+    classindex = -1;
+    classindex = msShapeGetNextClass(classindex, layer, map, &shape, classgroup, nclasses);
+    if((classindex == -1) || (layer->class[classindex]->status == MS_OFF)) {
       msFreeShape(&shape);
       continue;
     }
-
-    shape.classindex = msShapeGetClass(layer, map, &shape, classgroup, nclasses);
-    if((shape.classindex == -1) || (layer->class[shape.classindex]->status == MS_OFF)) {
-      msFreeShape(&shape);
-      continue;
-    }
+    shape.classindex = classindex;
+    classindex = -1; // This value indicates that no more class is to be
+                     // fetched from current shape
 
     if(maxfeatures >=0 && featuresdrawn >= maxfeatures) {
       msFreeShape(&shape);
