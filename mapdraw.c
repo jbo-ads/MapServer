@@ -1105,12 +1105,11 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 
   /* step through the target shapes and their classes */
   msInitShape(&shape);
-  classindex = -1;
   for (;;) {
-    if (classindex == -1) {
+    if (classindex == -1 || shape.index == -1) {
+      msFreeShape(&shape);
       status = msLayerNextShape(layer, &shape);
       if (status != MS_SUCCESS) {
-        msFreeShape(&shape);
         break;
       }
 
@@ -1118,15 +1117,12 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       if((shape.type == MS_SHAPE_LINE || shape.type == MS_SHAPE_POLYGON) && (minfeaturesize > 0) && (msShapeCheckSize(&shape, minfeaturesize) == MS_FALSE)) {
         if(layer->debug >= MS_DEBUGLEVEL_V)
           msDebug("msDrawVectorLayer(): Skipping shape (%ld) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
-        msFreeShape(&shape);
         continue;
       }
     }
 
-    classindex = -1;
     classindex = msShapeGetNextClass(classindex, layer, map, &shape, classgroup, nclasses);
     if((classindex == -1) || (layer->class[classindex]->status == MS_OFF)) {
-      msFreeShape(&shape);
       continue;
     }
     shape.classindex = classindex;
@@ -1134,7 +1130,6 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
                      // fetched from current shape
 
     if(maxfeatures >=0 && featuresdrawn >= maxfeatures) {
-      msFreeShape(&shape);
       status = MS_DONE;
       break;
     }
@@ -1157,14 +1152,12 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       if(strcasecmp(layer->styleitem, "AUTO") == 0) {
         if(msLayerGetAutoStyle(map, layer, layer->class[shape.classindex], &shape) != MS_SUCCESS) {
           retcode = MS_FAILURE;
-          msFreeShape(&shape);
           break;
         }
       } else {
         /* Generic feature style handling as per RFC-61 */
         if(msLayerGetFeatureStyle(map, layer, layer->class[shape.classindex], &shape) != MS_SUCCESS) {
           retcode = MS_FAILURE;
-          msFreeShape(&shape);
           break;
         }
       }
@@ -1212,19 +1205,16 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     else
       status = msDrawShape(map, layer, &shape, image, -1, drawmode); /* all styles  */
     if(status != MS_SUCCESS) {
-      msFreeShape(&shape);
       retcode = MS_FAILURE;
       break;
     }
     
     if(shape.numlines == 0) { /* once clipped the shape didn't need to be drawn */
-      msFreeShape(&shape);
       continue;
     }
 
     if(cache) {
       if(insertFeatureList(&shpcache, &shape) == NULL) {
-        msFreeShape(&shape);
         retcode = MS_FAILURE; /* problem adding to the cache */
         break;
       }
@@ -1232,8 +1222,8 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 
     maxnumstyles = MS_MAX(maxnumstyles, layer->class[shape.classindex]->numstyles);
 
-    msFreeShape(&shape);
   }
+  msFreeShape(&shape);
 
   if (classgroup)
     msFree(classgroup);
