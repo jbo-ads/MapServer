@@ -1675,9 +1675,11 @@ void initLabel(labelObj *label)
   label->styles = NULL;
 
   label->numbindings = 0;
+  label->nexprbindings = 0;
   for(i=0; i<MS_LABEL_BINDING_LENGTH; i++) {
     label->bindings[i].item = NULL;
     label->bindings[i].index = -1;
+    msInitExpression(&(label->exprBindings[i]));
   }
 
   msInitExpression(&(label->expression));
@@ -2599,9 +2601,11 @@ int initStyle(styleObj *style)
   style->linejoinmaxsize = MS_CJC_DEFAULT_JOIN_MAXSIZE;
 
   style->numbindings = 0;
+  style->nexprbindings = 0;
   for(i=0; i<MS_STYLE_BINDING_LENGTH; i++) {
     style->bindings[i].item = NULL;
     style->bindings[i].index = -1;
+    msInitExpression(&(style->exprBindings[i]));
   }
 
   return MS_SUCCESS;
