@@ -924,6 +924,8 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   int         drawmode=MS_DRAWMODE_FEATURES;
   char        annotate=MS_TRUE;
   shapeObj    shape;
+  shapeObj    savedShape;              /// DEBUGJBO
+  int follow_painters_model = FALSE;
   rectObj     searchrect;
   char        cache=MS_FALSE;
   int         maxnumstyles=1;
@@ -1126,8 +1128,10 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       continue;
     }
     shape.classindex = classindex;
-    classindex = -1; // This value indicates that no more class is to be
-                     // fetched from current shape
+    if (!follow_painters_model)
+    {
+      classindex = -1;
+    }
 
     if(maxfeatures >=0 && featuresdrawn >= maxfeatures) {
       status = MS_DONE;
@@ -1178,6 +1182,12 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       drawmode |= MS_DRAWMODE_UNCLIPPEDLINES;
     }
 
+    if (follow_painters_model)
+    {
+      msInitShape(&savedShape);         /// DEBUGJBO
+      msCopyShape(&shape, &savedShape); /// DEBUGJBO
+    }
+
     if (cache) {
       styleObj *pStyle = layer->class[shape.classindex]->styles[0];
       if (pStyle->outlinewidth > 0) {
@@ -1204,6 +1214,13 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 
     else
       status = msDrawShape(map, layer, &shape, image, -1, drawmode); /* all styles  */
+
+    if (follow_painters_model)
+    {
+      msCopyShape(&savedShape, &shape); /// DEBUGJBO
+      msFreeShape(&savedShape);         /// DEBUGJBO
+    }
+
     if(status != MS_SUCCESS) {
       retcode = MS_FAILURE;
       break;
