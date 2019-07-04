@@ -243,6 +243,7 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer, char *pszStyleLayerNa
 
           if ( pasLayers[j].numclasses > 0) {
             GET_LAYER(map, i)->type = pasLayers[j].type;
+            GET_LAYER(map, i)->rendermode = MS_PAINTERS_MODEL;
 
             for(k=0; k<GET_LAYER(map, i)->numclasses; k++) {
               if (GET_LAYER(map, i)->class[k] != NULL) {

@@ -925,7 +925,6 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   char        annotate=MS_TRUE;
   shapeObj    shape;
   shapeObj    savedShape;              /// DEBUGJBO
-  int follow_painters_model = FALSE;
   rectObj     searchrect;
   char        cache=MS_FALSE;
   int         maxnumstyles=1;
@@ -1128,7 +1127,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       continue;
     }
     shape.classindex = classindex;
-    if (!follow_painters_model)
+    if (layer->rendermode == MS_FIRST_CLASS)
     {
       classindex = -1;
     }
@@ -1182,7 +1181,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       drawmode |= MS_DRAWMODE_UNCLIPPEDLINES;
     }
 
-    if (follow_painters_model)
+    if (layer->rendermode == MS_PAINTERS_MODEL)
     {
       msInitShape(&savedShape);         /// DEBUGJBO
       msCopyShape(&shape, &savedShape); /// DEBUGJBO
@@ -1215,7 +1214,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     else
       status = msDrawShape(map, layer, &shape, image, -1, drawmode); /* all styles  */
 
-    if (follow_painters_model)
+    if (layer->rendermode == MS_PAINTERS_MODEL)
     {
       msCopyShape(&savedShape, &shape); /// DEBUGJBO
       msFreeShape(&savedShape);         /// DEBUGJBO

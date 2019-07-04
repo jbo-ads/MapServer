@@ -490,6 +490,7 @@ extern "C" {
   enum MS_SHAPE_TYPE {MS_SHAPE_POINT, MS_SHAPE_LINE, MS_SHAPE_POLYGON, MS_SHAPE_NULL};
   enum MS_LAYER_TYPE {MS_LAYER_POINT, MS_LAYER_LINE, MS_LAYER_POLYGON, MS_LAYER_RASTER, MS_LAYER_ANNOTATION /* only used for parser backwards compatibility */, MS_LAYER_QUERY, MS_LAYER_CIRCLE, MS_LAYER_TILEINDEX, MS_LAYER_CHART};
   enum MS_FONT_TYPE {MS_TRUETYPE, MS_BITMAP};
+  enum MS_RENDER_MODE {MS_FIRST_CLASS, MS_PAINTERS_MODEL};
 
 #define MS_POSITIONS_LENGTH 14
   enum MS_POSITIONS_ENUM {MS_UL=101, MS_LR, MS_UR, MS_LL, MS_CR, MS_CL, MS_UC, MS_LC, MS_CC, MS_AUTO, MS_XY, MS_NONE, MS_AUTO2,MS_FOLLOW};
@@ -1646,6 +1647,8 @@ typedef struct labelObj labelObj;
     char *group; /* shouldn't be unique it's supposed to be a group right? */
 
     int status; /* on or off */
+    enum MS_RENDER_MODE rendermode; /* FIRST_CLASS: Default and historic MapServer behavior
+                                       PAINTERS_MODEL: SLD behavior */
 
 #ifndef SWIG
     /* RFC86 Scale-dependent token replacements */

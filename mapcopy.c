@@ -1026,6 +1026,7 @@ int msCopyLayer(layerObj *dst, layerObj *src)
   MS_COPYSTRING(dst->data, src->data);
   MS_COPYSTRING(dst->encoding, src->encoding);
 
+  MS_COPYSTELEM(rendermode);
   MS_COPYSTELEM(status);
   MS_COPYSTELEM(type);
   MS_COPYSTELEM(tolerance);

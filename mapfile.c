@@ -3754,6 +3754,7 @@ int initLayer(layerObj *layer, mapObj *map)
   layer->group = NULL;
   layer->status = MS_OFF;
   layer->data = NULL;
+  layer->rendermode = MS_FIRST_CLASS;
 
   layer->map = map; /* point back to the encompassing structure */
 
