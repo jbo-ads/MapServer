@@ -3080,6 +3080,7 @@ int initClass(classObj *class)
   class->status = MS_ON;
   class->debug = MS_OFF;
   MS_REFCNT_INIT(class);
+  class->isfallback = FALSE;
 
   msInitExpression(&(class->expression));
   class->name = NULL;
@@ -3758,6 +3759,7 @@ int initLayer(layerObj *layer, mapObj *map)
   layer->group = NULL;
   layer->status = MS_OFF;
   layer->data = NULL;
+  layer->rendermode = MS_FIRST_CLASS;
 
   layer->map = map; /* point back to the encompassing structure */
 

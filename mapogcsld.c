@@ -243,6 +243,7 @@ int msSLDApplySLD(mapObj *map, char *psSLDXML, int iLayer, char *pszStyleLayerNa
 
           if ( pasLayers[j].numclasses > 0) {
             GET_LAYER(map, i)->type = pasLayers[j].type;
+            GET_LAYER(map, i)->rendermode = MS_PAINTERS_MODEL;
 
             for(k=0; k<GET_LAYER(map, i)->numclasses; k++) {
               if (GET_LAYER(map, i)->class[k] != NULL) {
@@ -859,6 +860,7 @@ int msSLDParseNamedLayer(CPLXMLNode *psRoot, layerObj *psLayer)
           if (psElseFilter) {
             msSLDParseRule(psRule, psLayer);
             _SLDApplyRuleValues(psRule, psLayer, 1);
+            psLayer->class[psLayer->numclasses-1]->isfallback = TRUE;
           }
           psRule = psRule->psNext;
 
