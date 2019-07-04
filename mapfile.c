@@ -3076,6 +3076,7 @@ int initClass(classObj *class)
   class->status = MS_ON;
   class->debug = MS_OFF;
   MS_REFCNT_INIT(class);
+  class->isfallback = FALSE;
 
   msInitExpression(&(class->expression));
   class->name = NULL;

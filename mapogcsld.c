@@ -870,6 +870,7 @@ int msSLDParseNamedLayer(CPLXMLNode *psRoot, layerObj *psLayer)
           if (psElseFilter) {
             msSLDParseRule(psRule, psLayer);
             _SLDApplyRuleValues(psRule, psLayer, 1);
+            psLayer->class[psLayer->numclasses-1]->isfallback = TRUE;
           }
           psRule = psRule->psNext;
 

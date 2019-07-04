@@ -534,6 +534,7 @@ int msCopyClass(classObj *dst, classObj *src, layerObj *layer)
   }
 
   MS_COPYSTELEM(status);
+  MS_COPYSTELEM(isfallback);
 
   /* free any previous styles on the dst layer */
   for(i=0; i<dst->numstyles; i++) { /* each style */

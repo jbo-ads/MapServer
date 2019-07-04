@@ -1181,6 +1181,8 @@ typedef struct labelObj labelObj;
 #endif
 
     int status;
+    int isfallback; /* TRUE if this class should be applied if and only if
+                       no other class is applicable ( e.g. SLD <ElseFilter/> */
 
 #ifndef SWIG
     styleObj **styles;

@@ -924,7 +924,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   int         drawmode=MS_DRAWMODE_FEATURES;
   char        annotate=MS_TRUE;
   shapeObj    shape;
-  shapeObj    savedShape;              /// DEBUGJBO
+  shapeObj    savedShape;
   rectObj     searchrect;
   char        cache=MS_FALSE;
   int         maxnumstyles=1;
@@ -1129,6 +1129,9 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     shape.classindex = classindex;
     if (layer->rendermode == MS_FIRST_CLASS)
     {
+      // In default rendering mode, only the first applicable class is actually applied.
+      // Setting classindex to -1 means that the next iteration will fetch the
+      // next shape instead of the next class for the current shape.
       classindex = -1;
     }
 
@@ -1183,8 +1186,12 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 
     if (layer->rendermode == MS_PAINTERS_MODEL)
     {
-      msInitShape(&savedShape);         /// DEBUGJBO
-      msCopyShape(&shape, &savedShape); /// DEBUGJBO
+      // In SLD "painters model" rendering mode all applicable classes are actually applied.
+      // Coordinates stored in the shape must keep their original values for
+      // the shape to be drawn multiple times.
+      // Here the original shape is saved.
+      msInitShape(&savedShape);
+      msCopyShape(&shape, &savedShape);
     }
 
     if (cache) {
@@ -1216,8 +1223,12 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
 
     if (layer->rendermode == MS_PAINTERS_MODEL)
     {
-      msCopyShape(&savedShape, &shape); /// DEBUGJBO
-      msFreeShape(&savedShape);         /// DEBUGJBO
+      // In SLD "painters model" rendering mode all applicable classes are actually applied.
+      // Coordinates stored in the shape must keep their original values for
+      // the shape to be drawn multiple times.
+      // Here the original shape is restored.
+      msCopyShape(&savedShape, &shape);
+      msFreeShape(&savedShape);
     }
 
     if(status != MS_SUCCESS) {
