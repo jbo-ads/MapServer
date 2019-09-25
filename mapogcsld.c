@@ -30,6 +30,7 @@
 #include "mapogcfilter.h"
 #include "mapserver.h"
 #include "mapows.h"
+#include "mapcopy.h"
 
 #ifdef USE_OGR
 #include "cpl_string.h"
@@ -962,28 +963,6 @@ int msSLDParseRule(CPLXMLNode *psRoot, layerObj *psLayer)
   /* ==================================================================== */
   nSymbolizer =0;
 
-  /* line symbolizer */
-  psLineSymbolizer = CPLGetXMLNode(psRoot, "LineSymbolizer");
-  while (psLineSymbolizer) {
-    if (!psLineSymbolizer->pszValue ||
-        strcasecmp(psLineSymbolizer->pszValue,
-                   "LineSymbolizer") != 0) {
-      psLineSymbolizer = psLineSymbolizer->psNext;
-      continue;
-    }
-
-    bSymbolizer = 1;
-    if (nSymbolizer == 0)
-      bNewClass = 1;
-    else
-      bNewClass = 0;
-
-    msSLDParseLineSymbolizer(psLineSymbolizer, psLayer, bNewClass);
-    psLineSymbolizer = psLineSymbolizer->psNext;
-    psLayer->type = MS_LAYER_LINE;
-    nSymbolizer++;
-  }
-
   /* Polygon symbolizer */
   psPolygonSymbolizer = CPLGetXMLNode(psRoot, "PolygonSymbolizer");
   while (psPolygonSymbolizer) {
@@ -1004,6 +983,50 @@ int msSLDParseRule(CPLXMLNode *psRoot, layerObj *psLayer)
     psLayer->type = MS_LAYER_POLYGON;
     nSymbolizer++;
   }
+
+  /* line symbolizer */
+  psLineSymbolizer = CPLGetXMLNode(psRoot, "LineSymbolizer");
+  while (psLineSymbolizer) {
+    if (!psLineSymbolizer->pszValue ||
+        strcasecmp(psLineSymbolizer->pszValue,
+                   "LineSymbolizer") != 0) {
+      psLineSymbolizer = psLineSymbolizer->psNext;
+      continue;
+    }
+
+    bSymbolizer = 1;
+    if (nSymbolizer == 0)
+      bNewClass = 1;
+    else
+      bNewClass = 0;
+
+    msSLDParseLineSymbolizer(psLineSymbolizer, psLayer, bNewClass);
+    psLineSymbolizer = psLineSymbolizer->psNext;
+    if (nSymbolizer == 0)
+      psLayer->type = MS_LAYER_LINE;
+    if (psLayer->type == MS_LAYER_POLYGON)
+    {
+      const int nClassId = psLayer->numclasses - 1;
+      if (nClassId >= 0)
+      {
+        const int nStyleId = psLayer->class[nClassId]->numstyles - 1;
+        if (nStyleId >= 0)
+        {
+          styleObj * psStyle = psLayer->class[nClassId]->styles[nStyleId];
+          psStyle->outlinecolor = psStyle->color;
+          MS_INIT_COLOR(psStyle->color,-1,-1,-1,255);
+          MS_COPYSTRING(psStyle->exprBindings[MS_STYLE_BINDING_OUTLINECOLOR].string,
+              psStyle->exprBindings[MS_STYLE_BINDING_COLOR].string);
+          psStyle->exprBindings[MS_STYLE_BINDING_OUTLINECOLOR].type =
+            psStyle->exprBindings[MS_STYLE_BINDING_COLOR].type;
+          msFreeExpression(&(psStyle->exprBindings[MS_STYLE_BINDING_COLOR]));
+          msInitExpression(&(psStyle->exprBindings[MS_STYLE_BINDING_COLOR]));
+        }
+      }
+    }
+    nSymbolizer++;
+  }
+
   /* Point Symbolizer */
   psPointSymbolizer = CPLGetXMLNode(psRoot, "PointSymbolizer");
   while (psPointSymbolizer) {
@@ -1020,7 +1043,8 @@ int msSLDParseRule(CPLXMLNode *psRoot, layerObj *psLayer)
       bNewClass = 0;
     msSLDParsePointSymbolizer(psPointSymbolizer, psLayer, bNewClass);
     psPointSymbolizer = psPointSymbolizer->psNext;
-    psLayer->type = MS_LAYER_POINT;
+    if (nSymbolizer == 0)
+      psLayer->type = MS_LAYER_POINT;
     nSymbolizer++;
   }
   /* Text symbolizer */
@@ -1063,7 +1087,8 @@ int msSLDParseRule(CPLXMLNode *psRoot, layerObj *psLayer)
     }
     msSLDParseRasterSymbolizer(psRasterSymbolizer, psLayer);
     psRasterSymbolizer = psRasterSymbolizer->psNext;
-    psLayer->type = MS_LAYER_RASTER;
+    if (nSymbolizer == 0)
+      psLayer->type = MS_LAYER_RASTER;
   }
 
   return MS_SUCCESS;
