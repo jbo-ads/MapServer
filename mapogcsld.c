@@ -952,14 +952,9 @@ int msSLDParseRule(CPLXMLNode *psRoot, layerObj *psLayer)
     return MS_FAILURE;
 
   /* TODO : parse name of the rule */
-  /* -------------------------------------------------------------------- */
-  /*      The SLD specs assumes here that a certain FeatureType can only have*/
-  /*      rules for only one type of symbolizer.                          */
-  /* -------------------------------------------------------------------- */
   /* ==================================================================== */
   /*      For each rule a new class is created. If there are more than    */
-  /*      one symbolizer of the same type, a style is added in the        */
-  /*      same class.                                                     */
+  /*      one symbolizer, a style is added in the same class              */
   /* ==================================================================== */
   nSymbolizer =0;
 
