@@ -1107,6 +1107,8 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
   /* step through the target shapes and their classes */
   msInitShape(&shape);
   for (;;) {
+    int classcount;
+    int rendermode;
     if (classindex == -1 || shape.index == -1) {
       msFreeShape(&shape);
       status = msLayerNextShape(layer, &shape);
@@ -1120,6 +1122,7 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
           msDebug("msDrawVectorLayer(): Skipping shape (%ld) because LAYER::MINFEATURESIZE is bigger than shape size\n", shape.index);
         continue;
       }
+      classcount = 0;
     }
 
     classindex = msShapeGetNextClass(classindex, layer, map, &shape, classgroup, nclasses);
@@ -1127,7 +1130,18 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       continue;
     }
     shape.classindex = classindex;
-    if (layer->rendermode == MS_FIRST_CLASS)
+
+    // When only one class is applicable, rendering mode is forced to its default,
+    // i.e. only the first applicable class is actually applied. As a consequence,
+    // cache can be enabled when relevant.
+    classcount++;
+    rendermode = layer->rendermode;
+    if ((classcount == 1) && (msShapeGetNextClass(classindex, layer, map, &shape, classgroup, nclasses) == -1))
+    {
+      rendermode = MS_FIRST_CLASS;
+    }
+
+    if (rendermode == MS_FIRST_CLASS)
     {
       // In default rendering mode, only the first applicable class is actually applied.
       // Setting classindex to -1 means that the next iteration will fetch the
@@ -1172,6 +1186,13 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       cache = MS_FALSE;
     }
 
+    if (rendermode == MS_PAINTERS_MODEL)
+    {
+      // Cache is designed to handle only one class. Therefore it is
+      // disabled when using SLD "painters model" rendering mode.
+      cache = MS_FALSE;
+    }
+
     /* RFC77 TODO: check return value, may need a more sophisticated if-then test. */
     if(annotate && layer->class[shape.classindex]->numlabels > 0) {
       drawmode |= MS_DRAWMODE_LABELS;
@@ -1184,9 +1205,9 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
       drawmode |= MS_DRAWMODE_UNCLIPPEDLINES;
     }
 
-    if (layer->rendermode == MS_PAINTERS_MODEL)
+    if (rendermode == MS_PAINTERS_MODEL)
     {
-      // In SLD "painters model" rendering mode all applicable classes are actually applied.
+      // In SLD "painters model" rendering mode, all applicable classes are actually applied.
       // Coordinates stored in the shape must keep their original values for
       // the shape to be drawn multiple times.
       // Here the original shape is saved.
@@ -1221,9 +1242,9 @@ int msDrawVectorLayer(mapObj *map, layerObj *layer, imageObj *image)
     else
       status = msDrawShape(map, layer, &shape, image, -1, drawmode); /* all styles  */
 
-    if (layer->rendermode == MS_PAINTERS_MODEL)
+    if (rendermode == MS_PAINTERS_MODEL)
     {
-      // In SLD "painters model" rendering mode all applicable classes are actually applied.
+      // In SLD "painters model" rendering mode, all applicable classes are actually applied.
       // Coordinates stored in the shape must keep their original values for
       // the shape to be drawn multiple times.
       // Here the original shape is restored.
