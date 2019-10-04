@@ -2130,7 +2130,7 @@ msINLINELayerInfo;
 
 int msINLINELayerIsOpen(layerObj *layer)
 {
-  if (layer->currentfeature)
+  if (layer->layerinfo)
     return(MS_TRUE);
   else
     return(MS_FALSE);
@@ -2251,6 +2251,7 @@ int msINLINELayerNextShape(layerObj *layer, shapeObj *shape)
         shape->values = (char **)msSmallRealloc(shape->values, sizeof(char *)*(layer->numitems));
         for (i = shape->numvalues; i < layer->numitems; i++)
           shape->values[i] = msStrdup("");
+        shape->numvalues = layer->numitems;
       }
 
       break;
